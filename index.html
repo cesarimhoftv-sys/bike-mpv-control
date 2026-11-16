@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BIKE MPV - Control</title>
+<title>BIKE MPV - Mecánica</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0c1622">
 <meta name="mobile-web-app-capable" content="yes">
@@ -15,6 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
   :root{
     --navy-950:#0c1622;
@@ -66,13 +67,10 @@
   }
   .medal{
     width:64px;height:64px;border-radius:50%;margin:0 auto 14px;
-    background:conic-gradient(from 180deg, var(--steel-300), #eef2f5, var(--steel-300));
-    display:flex;align-items:center;justify-content:center;box-shadow:0 4px 10px rgba(0,0,0,.4);
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 4px 14px rgba(0,0,0,.55);
   }
-  .medal-inner{
-    width:52px;height:52px;border-radius:50%;background:var(--navy-800);
-    border:3px solid var(--orange-500);display:flex;align-items:center;justify-content:center;font-size:22px;
-  }
+  .medal img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;}
   .brand{text-align:center;font-size:22px;letter-spacing:.5px;margin:0 0 2px;color:var(--cream-50);}
   .brand span{color:var(--orange-400);}
   .subbrand{text-align:center;color:var(--steel-500);font-size:12.5px;margin-bottom:26px;letter-spacing:.4px;}
@@ -103,7 +101,6 @@
   }
   .sidebar .brandmini{display:flex;align-items:center;gap:10px;padding:4px 6px 20px;}
   .sidebar .brandmini .medal{width:34px;height:34px;margin:0;}
-  .sidebar .brandmini .medal-inner{width:28px;height:28px;font-size:13px;border-width:2px;}
   .sidebar .brandmini .txt{font-family:'Oswald';font-size:14.5px;line-height:1.1;}
   .sidebar .brandmini .txt span{color:var(--orange-400);display:block;font-size:10.5px;letter-spacing:1px;color:var(--steel-500);}
   .navbtn{
@@ -168,7 +165,14 @@
   .badge.pendiente{background:#3a2a16;color:#f0a94e;}
   .badge.progreso{background:#173045;color:#5fb4e8;}
   .badge.listo{background:#173a26;color:#5fd68f;}
+  .badge.abierto{background:#3a2a16;color:#f0a94e;}
+  .badge.cerrado{background:#173a26;color:#5fd68f;}
   .badge.entregado{background:#241d3a;color:#b79bf0;}
+  .qcard{flex-direction:column;align-items:stretch;gap:8px;}
+  .qcard .qtop{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;}
+  .qcard .qactions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .qcard .opt-line{font-size:12px;color:var(--steel-500);}
+  .qcard .opt-line strong{color:var(--orange-400);}
   .empty{color:var(--steel-700);font-size:12.5px;text-align:center;padding:30px 10px;}
 
   /* ---------- modal ---------- */
@@ -218,6 +222,28 @@
   .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;}
   .search-input{padding:9px 12px;border-radius:8px;border:1px solid var(--navy-700);background:var(--navy-950);color:var(--cream-50);font-size:13px;width:220px;}
 
+  /* ---------- buscador global ---------- */
+  .search-results{display:flex;flex-direction:column;gap:8px;max-height:60vh;overflow-y:auto;margin-top:14px;}
+  .search-result{background:var(--navy-950);border:1px solid var(--navy-800);border-radius:8px;padding:10px 12px;}
+  .search-result:hover{border-color:var(--orange-500);}
+  .search-result .sr-top{display:flex;justify-content:space-between;gap:8px;font-size:13.5px;font-weight:600;}
+  .search-result .sr-meta{color:var(--steel-500);font-size:11.5px;margin-top:4px;}
+
+  /* ---------- badge de contador en nav ---------- */
+  .navbtn{position:relative;}
+  .navcount{margin-left:auto;background:var(--orange-500);color:#fff;font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:20px;}
+
+  /* ---------- listos para entregar ---------- */
+  .ready-card{background:var(--navy-950);border:1px solid var(--navy-800);border-radius:8px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px;}
+  .ready-card .info{font-size:13px;}
+  .ready-card .info .cliente{font-weight:600;}
+  .ready-card .info .bici{color:var(--steel-500);font-size:12px;}
+  .ready-card .days{font-size:11px;color:var(--orange-400);margin-top:3px;}
+
+  /* ---------- sync cloud ---------- */
+  .sync-box textarea{width:100%;min-height:80px;padding:9px 10px;border-radius:7px;border:1px solid var(--navy-700);background:var(--navy-950);color:var(--cream-50);font-size:12px;font-family:monospace;outline:none;}
+  .sync-status-line{display:flex;align-items:center;gap:8px;font-size:12.5px;margin-top:10px;color:var(--steel-300);}
+
   /* mobile */
   .mobile-tabs{display:none;}
   @media (max-width:760px){
@@ -232,12 +258,13 @@
 </style>
 </head>
 <body>
+<datalist id="parts-datalist"></datalist>
 
 <!-- ===================== LOGIN ===================== -->
 <div id="login-screen">
   <div class="login-card">
-    <div class="medal"><div class="medal-inner">🚲</div></div>
-    <h1 class="brand">BIKE MPV <span>- Control</span></h1>
+    <div class="medal"><img src="icon-192.png" alt="BIKE MPV"></div>
+    <h1 class="brand">BIKE MPV <span>- Mecánica</span></h1>
     <div class="subbrand" id="login-subtitle">MECÁNICA DE BICICLETAS · INGRESÁ TUS DATOS</div>
 
     <div id="login-form">
@@ -264,13 +291,16 @@
   <div class="shell">
     <div class="sidebar">
       <div class="brandmini">
-        <div class="medal"><div class="medal-inner">🚲</div></div>
-        <div class="txt">BIKE MPV<span>CONTROL</span></div>
+        <div class="medal"><img src="icon-192.png" alt="BIKE MPV"></div>
+        <div class="txt">BIKE MPV<span>MECÁNICA</span></div>
       </div>
+      <button class="navbtn" id="btn-open-search"><span class="ic">🔍</span> Buscar</button>
       <button class="navbtn active" data-page="calendario"><span class="ic">📅</span> Calendario</button>
+      <button class="navbtn" data-page="listos"><span class="ic">📦</span> Listos <span class="navcount" id="listos-navcount" style="display:none;"></span></button>
       <button class="navbtn" data-page="presupuesto"><span class="ic">🧾</span> Presupuesto</button>
       <button class="navbtn" data-page="stock"><span class="ic">🔧</span> Stock</button>
       <button class="navbtn" data-page="ajustes"><span class="ic">⚙️</span> Ajustes</button>
+      <button class="navbtn" id="btn-asistente" onclick="location.href='motor.html'"><span class="ic">🤖</span> Asistente</button>
       <div class="sidebar-foot">
         <div class="sync-line"><span class="sync-dot" id="sync-dot"></span><span id="sync-text">Sincronizado</span></div>
         <button class="logout-btn" id="btn-logout">Cerrar sesión</button>
@@ -305,6 +335,15 @@
         </div>
       </div>
 
+      <!-- ---- LISTOS PARA ENTREGAR ---- -->
+      <div class="page" id="page-listos" style="display:none;">
+        <h1 class="page-title">Listos para entregar</h1>
+        <p class="page-sub">Bicis terminadas que todavía no retiró el cliente, sin importar la fecha.</p>
+        <div class="card">
+          <div id="ready-list"></div>
+        </div>
+      </div>
+
       <!-- ---- PRESUPUESTO ---- -->
       <div class="page" id="page-presupuesto" style="display:none;">
         <h1 class="page-title">Generador de presupuesto</h1>
@@ -314,6 +353,9 @@
             <div class="field2"><label>Cliente (opcional)</label><input id="q-cliente" placeholder="Nombre del cliente"></div>
             <div class="field2"><label>Bici / referencia</label><input id="q-bici" placeholder="ej: MTB rodado 29"></div>
           </div>
+          <div class="form-row">
+            <div class="field2"><label>Teléfono (opcional, para WhatsApp)</label><input id="q-telefono" placeholder="ej: 5491122334455"></div>
+          </div>
           <table class="quote-table" id="quote-table">
             <thead><tr><th style="width:110px;">Tipo</th><th>Descripción</th><th style="width:70px;">Cant.</th><th style="width:100px;">Precio unit.</th><th style="width:100px;">Subtotal</th><th style="width:30px;"></th></tr></thead>
             <tbody id="quote-rows"></tbody>
@@ -322,7 +364,7 @@
           <div class="quote-total"><span>Total</span><span class="num" id="quote-total-num">$0</span></div>
           <div class="modal-actions" style="margin-top:16px;">
             <button class="btn" id="btn-quote-clear">Vaciar</button>
-            <button class="btn orange" id="btn-quote-save">Guardar presupuesto</button>
+            <button class="btn orange" id="btn-quote-save"><span id="btn-quote-save-label">Guardar presupuesto</span></button>
           </div>
         </div>
 
@@ -346,7 +388,7 @@
         </div>
         <div class="card" style="padding:0;overflow-x:auto;">
           <table class="stock-table">
-            <thead><tr><th>Repuesto</th><th>Categoría</th><th>Cantidad</th><th>Precio</th><th></th></tr></thead>
+            <thead><tr><th>Repuesto</th><th>Categoría</th><th>Cantidad</th><th>Costo</th><th>Bonificado</th><th>Final</th><th></th></tr></thead>
             <tbody id="stock-rows"></tbody>
           </table>
         </div>
@@ -362,8 +404,60 @@
           <button class="btn orange" id="btn-change-pass">Guardar cambios</button>
           <div class="login-msg" id="settings-msg"></div>
         </div>
+
+        <div class="card sync-box" style="max-width:420px;margin-top:18px;">
+          <h3 style="margin:0 0 6px;font-size:15px;">Sincronización en la nube (opcional)</h3>
+          <p class="page-sub" style="margin:0 0 12px;">Conectá un proyecto de Firebase gratuito para ver los mismos trabajos en el celular y la PC (se actualiza cada 15 segundos, funciona en cualquier red). <a href="#" id="link-firebase-help" style="color:var(--orange-400);">¿Cómo lo creo?</a></p>
+          <div id="firebase-help" style="display:none;font-size:12px;color:var(--steel-300);background:var(--navy-950);border:1px solid var(--navy-800);border-radius:8px;padding:10px;margin-bottom:12px;line-height:1.6;">
+            1. Andá a console.firebase.google.com y creá un proyecto gratis.<br>
+            2. Adentro, click en el ícono web (&lt;/&gt;) para "agregar app" y registrala.<br>
+            3. Copiá el objeto <code>firebaseConfig</code> que te muestra y pegalo abajo.<br>
+            4. En el menú del proyecto, andá a "Firestore Database" → "Crear base de datos" → modo producción, cualquier región.<br>
+            5. En Firestore → pestaña "Reglas", pegá esto y publicá (alcanza para uso simple de un taller):<br>
+            <code>allow read, write: if true;</code>
+          </div>
+          <div class="field2" style="margin-bottom:10px;">
+            <label>Configuración de Firebase (pegar el objeto firebaseConfig)</label>
+            <textarea id="firebase-config-input" placeholder='{"apiKey":"...","projectId":"...","...":"..."}'></textarea>
+          </div>
+          <div style="display:flex;gap:10px;">
+            <button class="btn orange" id="btn-firebase-connect">Conectar</button>
+            <button class="btn danger" id="btn-firebase-disconnect" style="display:none;">Desconectar</button>
+          </div>
+          <div class="sync-status-line"><span class="sync-dot" id="firebase-dot" style="background:var(--steel-500);"></span><span id="firebase-status-text">No conectado</span></div>
+        </div>
       </div>
 
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: OPCIONALES DEL PRESUPUESTO ===================== -->
+<div class="overlay" id="optional-overlay">
+  <div class="modal">
+    <h3>Servicios / repuestos opcionales</h3>
+    <p class="page-sub" style="margin:0 0 12px;">Se muestran aparte del total ya cerrado, como propuesta extra para el cliente.</p>
+    <table class="quote-table" id="optional-table">
+      <thead><tr><th style="width:110px;">Tipo</th><th>Descripción</th><th style="width:70px;">Cant.</th><th style="width:100px;">Precio unit.</th><th style="width:100px;">Subtotal</th><th style="width:30px;"></th></tr></thead>
+      <tbody id="optional-rows"></tbody>
+    </table>
+    <button class="btn ghost small" id="btn-add-optional-row" style="margin-top:10px;">+ Agregar ítem</button>
+    <div class="quote-total"><span>Subtotal opcional</span><span class="num" id="optional-total-num">$0</span></div>
+    <div class="modal-actions">
+      <button class="btn" id="btn-optional-cancel">Cancelar</button>
+      <button class="btn orange" id="btn-optional-save">Guardar opcionales</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: BUSCADOR GLOBAL ===================== -->
+<div class="overlay" id="search-overlay">
+  <div class="modal">
+    <h3>Buscar trabajo</h3>
+    <input class="search-input" id="search-input" style="width:100%;margin-bottom:6px;" placeholder="Cliente, bici o descripción...">
+    <div class="search-results" id="search-results"></div>
+    <div class="modal-actions">
+      <button class="btn" id="btn-search-close">Cerrar</button>
     </div>
   </div>
 </div>
@@ -415,7 +509,11 @@
     </div>
     <div class="form-row">
       <div class="field2"><label>Cantidad en stock</label><input type="number" id="p-cantidad" placeholder="0"></div>
-      <div class="field2"><label>Precio unitario ($)</label><input type="number" id="p-precio" placeholder="0"></div>
+      <div class="field2"><label>Precio de costo ($)</label><input type="number" id="p-precio-costo" placeholder="0"></div>
+    </div>
+    <div class="form-row">
+      <div class="field2"><label>Precio bonificado ($)</label><input type="number" id="p-precio-bonificado" placeholder="0"></div>
+      <div class="field2"><label>Precio final (al cliente) ($)</label><input type="number" id="p-precio-final" placeholder="0"></div>
     </div>
     <div class="modal-actions">
       <button class="btn" id="btn-part-cancel">Cancelar</button>
@@ -427,15 +525,18 @@
 
 <script>
 /* ============================================================
-   BIKE MPV - Control
+   BIKE MPV - Mecánica
    Persistencia local (localStorage) en este dispositivo/navegador.
    Cada dispositivo donde instales la app tiene sus propios datos,
    salvo que conectes un backend propio.
    ============================================================ */
 
 let dbApi = null;
+let fbProjectId = null;
+let fbPollInterval = null;
 const LOCAL_KEY = "bikempv_state_v1";
 const SESSION_KEY = "bikempv_session_v1";
+const FB_CONFIG_KEY = "bikempv_firebase_config_v1";
 
 let state = { jobs: [], parts: [], quotes: [] };
 let auth = null; // {username, password}
@@ -459,15 +560,12 @@ function saveLocalAuth(){
 }
 
 async function initDb(){
-  const dot = document.getElementById('sync-dot');
-  const txt = document.getElementById('sync-text');
   try{
     if(typeof claude !== "undefined" && claude.use){
       dbApi = await claude.use("db");
     }
   }catch(e){ dbApi = null; }
   if(dbApi){
-    dot.style.background = "#3f8f5f"; txt.textContent = "Sincronizado entre dispositivos";
     try{
       const authDoc = await dbApi.doc("shop/auth").get();
       if(authDoc && authDoc.data) auth = authDoc.data;
@@ -481,9 +579,12 @@ async function initDb(){
         if(doc && doc.data){ state = doc.data; saveLocal(); if(document.getElementById('app').style.display!=='none') renderAll(); }
       });
     }catch(e){}
-  } else {
-    dot.style.background = "#8b98a8"; txt.textContent = "Guardado en este dispositivo";
   }
+  const savedFb = localStorage.getItem(FB_CONFIG_KEY);
+  if(savedFb){
+    try{ await connectFirebase(JSON.parse(savedFb)); }catch(e){}
+  }
+  updateSyncIndicator();
 }
 
 async function persistState(){
@@ -491,12 +592,187 @@ async function persistState(){
   if(dbApi){
     try{ await dbApi.doc("shop/state").set(state); }catch(e){}
   }
+  if(fbProjectId){
+    try{ await fsSet(fbProjectId, "bikempv/state", state); }catch(e){}
+  }
 }
 async function persistAuth(){
   saveLocalAuth();
   if(dbApi){
     try{ await dbApi.doc("shop/auth").set(auth); }catch(e){}
   }
+  if(fbProjectId){
+    try{ await fsSet(fbProjectId, "bikempv/auth", auth); }catch(e){}
+  }
+}
+
+/* ---------------- sincronización con Firebase vía REST (opcional) ----------------
+   Usa la API REST de Firestore directamente con fetch(), sin el SDK de Firebase.
+   Evita el canal de conexión "en tiempo real" (WebChannel) que algunas redes
+   móviles o proxies bloquean, y en su lugar sincroniza por sondeo periódico. */
+function toFirestoreValue(v){
+  if(v === null || v === undefined) return { nullValue: null };
+  if(typeof v === 'string') return { stringValue: v };
+  if(typeof v === 'boolean') return { booleanValue: v };
+  if(typeof v === 'number') return Number.isInteger(v) ? { integerValue: String(v) } : { doubleValue: v };
+  if(Array.isArray(v)) return { arrayValue: { values: v.map(toFirestoreValue) } };
+  if(typeof v === 'object') return { mapValue: { fields: toFirestoreFields(v) } };
+  return { stringValue: String(v) };
+}
+function toFirestoreFields(obj){
+  const out = {};
+  for(const k in obj) out[k] = toFirestoreValue(obj[k]);
+  return out;
+}
+function fromFirestoreValue(v){
+  if(!v) return null;
+  if('stringValue' in v) return v.stringValue;
+  if('booleanValue' in v) return v.booleanValue;
+  if('integerValue' in v) return parseInt(v.integerValue, 10);
+  if('doubleValue' in v) return v.doubleValue;
+  if('nullValue' in v) return null;
+  if('arrayValue' in v) return (v.arrayValue.values || []).map(fromFirestoreValue);
+  if('mapValue' in v) return fromFirestoreFields(v.mapValue.fields || {});
+  return null;
+}
+function fromFirestoreFields(fields){
+  const out = {};
+  for(const k in fields) out[k] = fromFirestoreValue(fields[k]);
+  return out;
+}
+async function fsGet(projectId, path){
+  const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/default/documents/${path}`;
+  const res = await fetch(url);
+  if(res.status === 404) return null;
+  if(!res.ok) throw new Error('No se pudo leer de Firestore (código ' + res.status + '). Revisá que el projectId sea correcto y que las reglas de Firestore permitan lectura.');
+  const data = await res.json();
+  return data.fields ? fromFirestoreFields(data.fields) : {};
+}
+async function fsSet(projectId, path, obj){
+  const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/default/documents/${path}`;
+  const res = await fetch(url, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fields: toFirestoreFields(obj || {}) })
+  });
+  if(res.ok) return;
+  if(res.status === 404){
+    // El documento todavía no existe: lo creamos explícitamente con POST.
+    const parts = path.split('/');
+    const docId = parts.pop();
+    const collectionPath = parts.join('/');
+    const createUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/default/documents/${collectionPath}?documentId=${encodeURIComponent(docId)}`;
+    const createRes = await fetch(createUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fields: toFirestoreFields(obj || {}) })
+    });
+    if(createRes.ok) return;
+    if(createRes.status === 409){
+      // Ya existe (se creó entre medio): reintentamos el PATCH una vez.
+      const retryRes = await fetch(url, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fields: toFirestoreFields(obj || {}) })
+      });
+      if(retryRes.ok) return;
+      throw new Error('No se pudo escribir en Firestore (código ' + retryRes.status + ').');
+    }
+    throw new Error('No se pudo crear el documento en Firestore (código ' + createRes.status + ').');
+  }
+  throw new Error('No se pudo escribir en Firestore (código ' + res.status + ').');
+}
+function updateSyncIndicator(){
+  const dot = document.getElementById('sync-dot');
+  const txt = document.getElementById('sync-text');
+  if(fbProjectId){ dot.style.background = "#3f8f5f"; txt.textContent = "Sincronizado en la nube"; }
+  else if(dbApi){ dot.style.background = "#3f8f5f"; txt.textContent = "Sincronizado entre dispositivos"; }
+  else { dot.style.background = "#8b98a8"; txt.textContent = "Guardado en este dispositivo"; }
+}
+function startFirebasePolling(){
+  if(fbPollInterval) clearInterval(fbPollInterval);
+  fbPollInterval = setInterval(async ()=>{
+    if(!fbProjectId) return;
+    try{
+      const remoteState = await fsGet(fbProjectId, "bikempv/state");
+      if(remoteState){ state = remoteState; saveLocal(); if(document.getElementById('app').style.display!=='none') renderAll(); }
+      const remoteAuth = await fsGet(fbProjectId, "bikempv/auth");
+      if(remoteAuth){ auth = remoteAuth; saveLocalAuth(); }
+    }catch(e){}
+  }, 15000);
+}
+async function connectFirebase(config){
+  const projectId = config && config.projectId;
+  if(!projectId) throw new Error('El objeto pegado no tiene "projectId". Copiá el firebaseConfig completo de Firebase.');
+  let remoteState;
+  try{
+    remoteState = await fsGet(projectId, "bikempv/state");
+  }catch(e){
+    throw new Error('No se pudo conectar a Firestore. ' + e.message);
+  }
+  if(remoteState) state = remoteState;
+  else await fsSet(projectId, "bikempv/state", state);
+  const remoteAuth = await fsGet(projectId, "bikempv/auth");
+  if(remoteAuth){ auth = remoteAuth; saveLocalAuth(); }
+  else if(auth) await fsSet(projectId, "bikempv/auth", auth);
+  fbProjectId = projectId;
+  saveLocal();
+  startFirebasePolling();
+  updateSyncIndicator();
+}
+function disconnectFirebase(){
+  if(fbPollInterval) clearInterval(fbPollInterval);
+  fbPollInterval = null;
+  fbProjectId = null;
+  localStorage.removeItem(FB_CONFIG_KEY);
+  updateSyncIndicator();
+}
+function initSettingsSyncUI(){
+  const saved = localStorage.getItem(FB_CONFIG_KEY);
+  const input = document.getElementById('firebase-config-input');
+  const btnConnect = document.getElementById('btn-firebase-connect');
+  const btnDisconnect = document.getElementById('btn-firebase-disconnect');
+  const statusTxt = document.getElementById('firebase-status-text');
+  const statusDot = document.getElementById('firebase-dot');
+  if(saved){ input.value = saved; }
+  function refresh(){
+    if(fbProjectId){
+      statusTxt.textContent = "Conectado — sincronizando en la nube";
+      statusDot.style.background = "#3f8f5f";
+      btnDisconnect.style.display = 'inline-block';
+    } else {
+      statusTxt.textContent = "No conectado";
+      statusDot.style.background = "#8b98a8";
+      btnDisconnect.style.display = 'none';
+    }
+  }
+  refresh();
+  document.getElementById('link-firebase-help').addEventListener('click', (e)=>{
+    e.preventDefault();
+    const el = document.getElementById('firebase-help');
+    el.style.display = el.style.display==='none' ? 'block' : 'none';
+  });
+  btnConnect.addEventListener('click', async ()=>{
+    let cfg;
+    try{ cfg = JSON.parse(input.value.trim()); }
+    catch(e){ alert('El texto pegado no es un JSON válido. Copiá el objeto firebaseConfig completo.'); return; }
+    btnConnect.textContent = 'Conectando...';
+    try{
+      await connectFirebase(cfg);
+      localStorage.setItem(FB_CONFIG_KEY, JSON.stringify(cfg));
+      refresh();
+      alert('Conectado. Este dispositivo ya sincroniza en la nube (cada 15 segundos).');
+    }catch(e){
+      console.error('Firebase connect error:', e);
+      alert('No se pudo conectar. Detalle del error: ' + (e && e.message ? e.message : String(e)));
+    }
+    btnConnect.textContent = 'Conectar';
+  });
+  btnDisconnect.addEventListener('click', ()=>{
+    disconnectFirebase();
+    input.value = '';
+    refresh();
+  });
 }
 
 /* ---------------- login flow ---------------- */
@@ -553,6 +829,7 @@ document.getElementById('btn-login').addEventListener('click', ()=>{
   }
 });
 
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden){ try{ loadLocal(); renderAll(); }catch(e){} } });
 document.getElementById('btn-logout').addEventListener('click', ()=>{
   localStorage.removeItem(SESSION_KEY);
   document.getElementById('app').style.display='none';
@@ -564,11 +841,14 @@ function enterApp(){
   document.getElementById('login-screen').style.display='none';
   document.getElementById('app').style.display='block';
   document.getElementById('set-user-display').value = auth ? auth.username : '';
+  initSettingsSyncUI();
+  updateSyncIndicator();
   renderAll();
 }
 
 /* ---------------- navigation ---------------- */
 document.querySelectorAll('.navbtn').forEach(btn=>{
+  if(!btn.dataset.page) return;
   btn.addEventListener('click', ()=>{
     document.querySelectorAll('.navbtn').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
@@ -577,8 +857,90 @@ document.querySelectorAll('.navbtn').forEach(btn=>{
     if(btn.dataset.page==='stock') renderStock();
     if(btn.dataset.page==='presupuesto') renderSavedQuotes();
     if(btn.dataset.page==='calendario') renderCalendar();
+    if(btn.dataset.page==='listos') renderListos();
   });
 });
+
+/* ---------------- buscador global ---------------- */
+document.getElementById('btn-open-search').addEventListener('click', ()=>{
+  document.getElementById('search-input').value = '';
+  renderSearchResults('');
+  document.getElementById('search-overlay').classList.add('show');
+  setTimeout(()=> document.getElementById('search-input').focus(), 50);
+});
+document.getElementById('btn-search-close').addEventListener('click', ()=>{
+  document.getElementById('search-overlay').classList.remove('show');
+});
+document.getElementById('search-input').addEventListener('input', (e)=>{
+  renderSearchResults(e.target.value);
+});
+function renderSearchResults(q){
+  q = q.trim().toLowerCase();
+  const wrap = document.getElementById('search-results');
+  if(!q){ wrap.innerHTML = '<div class="empty">Escribí para buscar por cliente, bici o descripción.</div>'; return; }
+  const results = state.jobs.filter(j=>
+    (j.cliente||'').toLowerCase().includes(q) ||
+    (j.bici||'').toLowerCase().includes(q) ||
+    (j.descripcion||'').toLowerCase().includes(q)
+  );
+  if(results.length===0){ wrap.innerHTML = '<div class="empty">Sin resultados.</div>'; return; }
+  wrap.innerHTML = results.map(j=>`
+    <div class="search-result" data-id="${j.id}">
+      <div class="sr-top"><span>${esc(j.cliente||'Sin nombre')}</span><span class="badge ${j.estado}">${estadoLabel(j.estado)}</span></div>
+      <div class="sr-meta">${esc(j.bici||'')} · ingreso ${j.fechaIngreso||'—'} · entrega ${j.fechaEntrega||'—'}</div>
+    </div>
+  `).join('');
+  wrap.querySelectorAll('.search-result').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      document.getElementById('search-overlay').classList.remove('show');
+      openJobModal(el.dataset.id);
+    });
+  });
+}
+
+/* ---------------- listos para entregar ---------------- */
+function renderListos(){
+  const ready = state.jobs.filter(j=>j.estado==='listo').sort((a,b)=>(a.fechaEntrega||'').localeCompare(b.fechaEntrega||''));
+  const wrap = document.getElementById('ready-list');
+  if(ready.length===0){ wrap.innerHTML = '<div class="empty">No hay bicis listas esperando retiro.</div>'; }
+  else {
+    wrap.innerHTML = ready.map(j=>{
+      const days = daysSince(j.fechaEntrega);
+      return `<div class="ready-card" data-id="${j.id}">
+        <div class="info">
+          <div class="cliente">${esc(j.cliente||'Sin nombre')}</div>
+          <div class="bici">${esc(j.bici||'')}</div>
+          <div class="days">${days}</div>
+        </div>
+        <button class="btn small orange mark-delivered" data-id="${j.id}">Marcar entregado</button>
+      </div>`;
+    }).join('');
+    wrap.querySelectorAll('.mark-delivered').forEach(b=>{
+      b.addEventListener('click', async (e)=>{
+        e.stopPropagation();
+        const job = state.jobs.find(j=>j.id===b.dataset.id);
+        if(job){ job.estado = 'entregado'; await persistState(); renderListos(); renderCalendar(); updateListosBadge(); }
+      });
+    });
+    wrap.querySelectorAll('.ready-card').forEach(el=>{
+      el.addEventListener('click', ()=>openJobModal(el.dataset.id));
+    });
+  }
+  updateListosBadge();
+}
+function daysSince(iso){
+  if(!iso) return '';
+  const d = new Date(iso+'T00:00:00');
+  const diff = Math.floor((new Date(todayISO()+'T00:00:00') - d) / 86400000);
+  if(diff <= 0) return 'Estimado para hoy';
+  if(diff === 1) return 'Esperando desde hace 1 día';
+  return `Esperando desde hace ${diff} días`;
+}
+function updateListosBadge(){
+  const n = state.jobs.filter(j=>j.estado==='listo').length;
+  const badge = document.getElementById('listos-navcount');
+  if(n>0){ badge.style.display='inline-block'; badge.textContent = n; } else { badge.style.display='none'; }
+}
 
 /* ---------------- calendar ---------------- */
 let calCursor = new Date(); calCursor.setDate(1);
@@ -733,7 +1095,7 @@ document.getElementById('btn-job-save').addEventListener('click', async ()=>{
   }
   await persistState();
   document.getElementById('job-overlay').classList.remove('show');
-  renderCalendar(); renderStock();
+  renderCalendar(); renderStock(); updateListosBadge();
 });
 
 document.getElementById('btn-job-delete').addEventListener('click', async ()=>{
@@ -747,8 +1109,19 @@ document.getElementById('btn-job-delete').addEventListener('click', async ()=>{
   state.jobs = state.jobs.filter(j=>j.id!==editingJobId);
   await persistState();
   document.getElementById('job-overlay').classList.remove('show');
-  renderCalendar(); renderStock();
+  renderCalendar(); renderStock(); updateListosBadge();
 });
+
+/* ---------------- autocompletado de repuestos ---------------- */
+function refreshPartsDatalist(){
+  const dl = document.getElementById('parts-datalist');
+  dl.innerHTML = state.parts.map(p=> `<option value="${esc(p.nombre)}">`).join('');
+}
+function findPartByName(name){
+  const n = (name||'').trim().toLowerCase();
+  if(!n) return null;
+  return state.parts.find(p=> p.nombre.trim().toLowerCase() === n) || null;
+}
 
 /* ---------------- stock ---------------- */
 function renderStock(){
@@ -758,14 +1131,16 @@ function renderStock(){
   document.getElementById('stat-total-parts').textContent = state.parts.length;
   document.getElementById('stat-low-parts').textContent = state.parts.filter(p=>p.cantidad<=2).length;
 
-  if(filtered.length===0){ rows.innerHTML = `<tr><td colspan="5" class="empty">No hay repuestos cargados.</td></tr>`; return; }
+  if(filtered.length===0){ rows.innerHTML = `<tr><td colspan="7" class="empty">No hay repuestos cargados.</td></tr>`; return; }
   rows.innerHTML = filtered.map(p=>{
     const low = p.cantidad<=2;
     return `<tr class="${low?'low':''}" data-id="${p.id}">
       <td>${esc(p.nombre)}</td>
       <td>${esc(p.categoria||'—')}</td>
       <td><span class="qtybadge">${p.cantidad}</span></td>
-      <td>${money(p.precio)}</td>
+      <td>${money(p.precioCosto)}</td>
+      <td>${money(p.precioBonificado)}</td>
+      <td style="color:var(--orange-400);font-weight:600;">${money(p.precioFinal)}</td>
       <td><button class="btn small edit-part" data-id="${p.id}">Editar</button></td>
     </tr>`;
   }).join('');
@@ -782,7 +1157,9 @@ function openPartModal(id){
   document.getElementById('p-nombre').value = part?.nombre || '';
   document.getElementById('p-categoria').value = part?.categoria || '';
   document.getElementById('p-cantidad').value = part?.cantidad ?? '';
-  document.getElementById('p-precio').value = part?.precio ?? '';
+  document.getElementById('p-precio-costo').value = part?.precioCosto ?? '';
+  document.getElementById('p-precio-bonificado').value = part?.precioBonificado ?? '';
+  document.getElementById('p-precio-final').value = part?.precioFinal ?? '';
   document.getElementById('btn-part-delete').style.display = part ? 'inline-block' : 'none';
   document.getElementById('part-overlay').classList.add('show');
 }
@@ -795,7 +1172,9 @@ document.getElementById('btn-part-save').addEventListener('click', async ()=>{
     nombre,
     categoria: document.getElementById('p-categoria').value.trim(),
     cantidad: Math.max(0, parseInt(document.getElementById('p-cantidad').value)||0),
-    precio: Number(document.getElementById('p-precio').value)||0
+    precioCosto: Number(document.getElementById('p-precio-costo').value)||0,
+    precioBonificado: Number(document.getElementById('p-precio-bonificado').value)||0,
+    precioFinal: Number(document.getElementById('p-precio-final').value)||0
   };
   if(editingPartId){
     const idx = state.parts.findIndex(p=>p.id===editingPartId);
@@ -806,6 +1185,7 @@ document.getElementById('btn-part-save').addEventListener('click', async ()=>{
   await persistState();
   document.getElementById('part-overlay').classList.remove('show');
   renderStock();
+  refreshPartsDatalist();
 });
 document.getElementById('btn-part-delete').addEventListener('click', async ()=>{
   if(!editingPartId) return;
@@ -814,10 +1194,12 @@ document.getElementById('btn-part-delete').addEventListener('click', async ()=>{
   await persistState();
   document.getElementById('part-overlay').classList.remove('show');
   renderStock();
+  refreshPartsDatalist();
 });
 
 /* ---------------- presupuesto ---------------- */
 let quoteRows = [];
+let editingQuoteId = null;
 function newQuoteRow(){ return { id: uid(), tipo:'repuesto', desc:'', cant:1, precio:0 }; }
 function renderQuoteRows(){
   const tbody = document.getElementById('quote-rows');
@@ -828,7 +1210,7 @@ function renderQuoteRows(){
         <option value="repuesto" ${r.tipo==='repuesto'?'selected':''}>Repuesto</option>
         <option value="mano_de_obra" ${r.tipo==='mano_de_obra'?'selected':''}>Mano de obra</option>
       </select></td>
-      <td><input class="q-desc" value="${esc(r.desc)}" placeholder="descripción"></td>
+      <td><input class="q-desc" value="${esc(r.desc)}" placeholder="descripción" ${r.tipo==='repuesto' ? 'list="parts-datalist"' : ''}></td>
       <td><input class="q-cant" type="number" min="1" value="${r.cant}"></td>
       <td><input class="q-precio" type="number" min="0" value="${r.precio}"></td>
       <td>${money(r.cant*r.precio)}</td>
@@ -838,8 +1220,14 @@ function renderQuoteRows(){
   tbody.querySelectorAll('tr').forEach(tr=>{
     const id = tr.dataset.id;
     const row = quoteRows.find(r=>r.id===id);
-    tr.querySelector('.q-tipo').addEventListener('change', e=>{ row.tipo=e.target.value; });
-    tr.querySelector('.q-desc').addEventListener('input', e=>{ row.desc=e.target.value; });
+    tr.querySelector('.q-tipo').addEventListener('change', e=>{ row.tipo=e.target.value; renderQuoteRows(); });
+    tr.querySelector('.q-desc').addEventListener('input', e=>{
+      row.desc=e.target.value;
+      if(row.tipo==='repuesto'){
+        const match = findPartByName(row.desc);
+        if(match && !row.precio){ row.precio = match.precioFinal || 0; updateQuoteTotal(); renderQuoteRows(); }
+      }
+    });
     tr.querySelector('.q-cant').addEventListener('input', e=>{ row.cant=Number(e.target.value)||0; updateQuoteTotal(); renderQuoteRows(); });
     tr.querySelector('.q-precio').addEventListener('input', e=>{ row.precio=Number(e.target.value)||0; updateQuoteTotal(); renderQuoteRows(); });
     tr.querySelector('.q-del').addEventListener('click', ()=>{ quoteRows = quoteRows.filter(r=>r.id!==id); renderQuoteRows(); updateQuoteTotal(); });
@@ -851,47 +1239,240 @@ function updateQuoteTotal(){
   document.getElementById('quote-total-num').textContent = money(total);
 }
 document.getElementById('btn-add-row').addEventListener('click', ()=>{ quoteRows.push(newQuoteRow()); renderQuoteRows(); });
-document.getElementById('btn-quote-clear').addEventListener('click', ()=>{
+function resetQuoteForm(){
+  editingQuoteId = null;
   quoteRows = [newQuoteRow()];
-  document.getElementById('q-cliente').value=''; document.getElementById('q-bici').value='';
+  document.getElementById('q-cliente').value=''; document.getElementById('q-bici').value=''; document.getElementById('q-telefono').value='';
+  document.getElementById('btn-quote-save-label').textContent = 'Guardar presupuesto';
   renderQuoteRows();
-});
+}
+document.getElementById('btn-quote-clear').addEventListener('click', resetQuoteForm);
 document.getElementById('btn-quote-save').addEventListener('click', async ()=>{
   const total = quoteRows.reduce((s,r)=>s+(r.cant*r.precio),0);
   if(total<=0){ alert('Cargá al menos un ítem con precio.'); return; }
-  state.quotes.push({
-    id: uid(),
-    cliente: document.getElementById('q-cliente').value.trim(),
-    bici: document.getElementById('q-bici').value.trim(),
-    items: quoteRows.filter(r=>r.desc || r.precio),
-    total,
-    fecha: todayISO()
-  });
+  const cliente = document.getElementById('q-cliente').value.trim();
+  const bici = document.getElementById('q-bici').value.trim();
+  const telefono = document.getElementById('q-telefono').value.trim();
+  const items = quoteRows.filter(r=>r.desc || r.precio);
+
+  if(editingQuoteId){
+    const q = state.quotes.find(x=>x.id===editingQuoteId);
+    if(q){ q.cliente=cliente; q.bici=bici; q.telefono=telefono; q.items=items; q.total=total; }
+  } else {
+    state.quotes.push({
+      id: uid(), cliente, bici, telefono, items, total,
+      fecha: todayISO(), estado: 'abierto', opcionales: []
+    });
+  }
   await persistState();
-  quoteRows = [newQuoteRow()];
-  document.getElementById('q-cliente').value=''; document.getElementById('q-bici').value='';
-  renderQuoteRows();
+  resetQuoteForm();
   renderSavedQuotes();
 });
+function editQuote(id){
+  const q = state.quotes.find(x=>x.id===id);
+  if(!q) return;
+  editingQuoteId = id;
+  document.getElementById('q-cliente').value = q.cliente || '';
+  document.getElementById('q-bici').value = q.bici || '';
+  document.getElementById('q-telefono').value = q.telefono || '';
+  quoteRows = (q.items && q.items.length ? q.items : [newQuoteRow()]).map(it=>({ id: uid(), tipo: it.tipo||'repuesto', desc: it.desc||'', cant: it.cant||1, precio: it.precio||0 }));
+  document.getElementById('btn-quote-save-label').textContent = 'Actualizar presupuesto';
+  renderQuoteRows();
+  document.querySelector('#page-presupuesto .card').scrollIntoView({behavior:'smooth'});
+}
+async function toggleQuoteEstado(id, estado){
+  const q = state.quotes.find(x=>x.id===id);
+  if(!q) return;
+  q.estado = estado;
+  if(!q.opcionales) q.opcionales = [];
+  await persistState();
+  renderSavedQuotes();
+}
 function renderSavedQuotes(){
   const wrap = document.getElementById('saved-quotes-list');
   if(state.quotes.length===0){ wrap.innerHTML = '<div class="empty">Todavía no guardaste presupuestos.</div>'; return; }
-  wrap.innerHTML = [...state.quotes].reverse().map(q=>`
+  wrap.innerHTML = [...state.quotes].reverse().map(q=>{
+    const estado = q.estado || 'abierto';
+    const opcionales = q.opcionales || [];
+    const opcTotal = opcionales.reduce((s,r)=>s+(r.cant*r.precio),0);
+    return `
     <div class="qcard" data-id="${q.id}">
-      <div><strong>${esc(q.cliente||'Sin cliente')}</strong> · ${esc(q.bici||'')} <span style="color:var(--steel-500);">— ${q.fecha}</span></div>
-      <div style="display:flex;align-items:center;gap:12px;">
+      <div class="qtop">
+        <div><strong>${esc(q.cliente||'Sin cliente')}</strong> · ${esc(q.bici||'')} <span style="color:var(--steel-500);">— ${q.fecha}</span></div>
+        <span class="badge ${estado}">${estado==='cerrado' ? 'Cerrado' : 'Abierto'}</span>
+      </div>
+      ${opcTotal>0 ? `<div class="opt-line">+ opcionales sugeridos: <strong>${money(opcTotal)}</strong> (${opcionales.length} ítem${opcionales.length>1?'s':''})</div>` : ''}
+      <div class="qactions">
         <span style="color:var(--orange-400);font-weight:600;">${money(q.total)}</span>
+        ${estado==='cerrado'
+          ? `<button class="btn small optional-quote" data-id="${q.id}">+ Opcional</button><button class="btn small reopen-quote" data-id="${q.id}">Reabrir</button>`
+          : `<button class="btn small edit-quote" data-id="${q.id}">Editar</button><button class="btn small close-quote" data-id="${q.id}">Cerrar</button>`}
+        <button class="btn small pdf-quote" data-id="${q.id}">PDF</button>
+        ${q.telefono ? `<button class="btn small wa-quote" data-id="${q.id}">WhatsApp</button>` : ''}
         <button class="btn small danger del-quote" data-id="${q.id}">Eliminar</button>
       </div>
     </div>
-  `).join('');
+  `;}).join('');
   wrap.querySelectorAll('.del-quote').forEach(b=>{
     b.addEventListener('click', async ()=>{
+      if(!confirm('¿Eliminar este presupuesto?')) return;
       state.quotes = state.quotes.filter(q=>q.id!==b.dataset.id);
       await persistState();
       renderSavedQuotes();
     });
   });
+  wrap.querySelectorAll('.edit-quote').forEach(b=> b.addEventListener('click', ()=> editQuote(b.dataset.id)));
+  wrap.querySelectorAll('.close-quote').forEach(b=> b.addEventListener('click', ()=> toggleQuoteEstado(b.dataset.id, 'cerrado')));
+  wrap.querySelectorAll('.reopen-quote').forEach(b=> b.addEventListener('click', ()=> toggleQuoteEstado(b.dataset.id, 'abierto')));
+  wrap.querySelectorAll('.optional-quote').forEach(b=> b.addEventListener('click', ()=> openOptionalModal(b.dataset.id)));
+  wrap.querySelectorAll('.pdf-quote').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      const q = state.quotes.find(x=>x.id===b.dataset.id);
+      if(q) exportQuotePDF(q);
+    });
+  });
+  wrap.querySelectorAll('.wa-quote').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      const q = state.quotes.find(x=>x.id===b.dataset.id);
+      if(q) shareQuoteWhatsApp(q);
+    });
+  });
+}
+
+/* ---------------- opcionales del presupuesto ---------------- */
+let editingOptionalQuoteId = null;
+let optionalRows = [];
+function newOptionalRow(){ return { id: uid(), tipo:'repuesto', desc:'', cant:1, precio:0 }; }
+function openOptionalModal(quoteId){
+  const q = state.quotes.find(x=>x.id===quoteId);
+  if(!q) return;
+  editingOptionalQuoteId = quoteId;
+  optionalRows = (q.opcionales && q.opcionales.length ? q.opcionales : [newOptionalRow()]).map(it=>({ id: uid(), tipo: it.tipo||'repuesto', desc: it.desc||'', cant: it.cant||1, precio: it.precio||0 }));
+  renderOptionalRows();
+  document.getElementById('optional-overlay').classList.add('show');
+}
+function renderOptionalRows(){
+  const tbody = document.getElementById('optional-rows');
+  if(optionalRows.length===0) optionalRows.push(newOptionalRow());
+  tbody.innerHTML = optionalRows.map(r=>`
+    <tr data-id="${r.id}">
+      <td><select class="o-tipo">
+        <option value="repuesto" ${r.tipo==='repuesto'?'selected':''}>Repuesto</option>
+        <option value="mano_de_obra" ${r.tipo==='mano_de_obra'?'selected':''}>Mano de obra</option>
+      </select></td>
+      <td><input class="o-desc" value="${esc(r.desc)}" placeholder="descripción" ${r.tipo==='repuesto' ? 'list="parts-datalist"' : ''}></td>
+      <td><input class="o-cant" type="number" min="1" value="${r.cant}"></td>
+      <td><input class="o-precio" type="number" min="0" value="${r.precio}"></td>
+      <td>${money(r.cant*r.precio)}</td>
+      <td><button class="btn small danger o-del">✕</button></td>
+    </tr>
+  `).join('');
+  tbody.querySelectorAll('tr').forEach(tr=>{
+    const id = tr.dataset.id;
+    const row = optionalRows.find(r=>r.id===id);
+    tr.querySelector('.o-tipo').addEventListener('change', e=>{ row.tipo=e.target.value; renderOptionalRows(); });
+    tr.querySelector('.o-desc').addEventListener('input', e=>{
+      row.desc=e.target.value;
+      if(row.tipo==='repuesto'){
+        const match = findPartByName(row.desc);
+        if(match && !row.precio){ row.precio = match.precioFinal || 0; updateOptionalTotal(); renderOptionalRows(); }
+      }
+    });
+    tr.querySelector('.o-cant').addEventListener('input', e=>{ row.cant=Number(e.target.value)||0; updateOptionalTotal(); renderOptionalRows(); });
+    tr.querySelector('.o-precio').addEventListener('input', e=>{ row.precio=Number(e.target.value)||0; updateOptionalTotal(); renderOptionalRows(); });
+    tr.querySelector('.o-del').addEventListener('click', ()=>{ optionalRows = optionalRows.filter(r=>r.id!==id); renderOptionalRows(); updateOptionalTotal(); });
+  });
+  updateOptionalTotal();
+}
+function updateOptionalTotal(){
+  const total = optionalRows.reduce((s,r)=>s+(r.cant*r.precio),0);
+  document.getElementById('optional-total-num').textContent = money(total);
+}
+document.getElementById('btn-add-optional-row').addEventListener('click', ()=>{ optionalRows.push(newOptionalRow()); renderOptionalRows(); });
+document.getElementById('btn-optional-cancel').addEventListener('click', ()=>{
+  document.getElementById('optional-overlay').classList.remove('show');
+});
+document.getElementById('btn-optional-save').addEventListener('click', async ()=>{
+  const q = state.quotes.find(x=>x.id===editingOptionalQuoteId);
+  if(!q) return;
+  q.opcionales = optionalRows.filter(r=>r.desc || r.precio);
+  await persistState();
+  document.getElementById('optional-overlay').classList.remove('show');
+  renderSavedQuotes();
+});
+
+function quoteSummaryText(q){
+  let lines = [];
+  lines.push(`Presupuesto - BIKE MPV`);
+  if(q.cliente) lines.push(`Cliente: ${q.cliente}`);
+  if(q.bici) lines.push(`Bici: ${q.bici}`);
+  lines.push(`Fecha: ${q.fecha}`);
+  lines.push('');
+  q.items.forEach(it=>{
+    const tipo = it.tipo==='mano_de_obra' ? 'Mano de obra' : 'Repuesto';
+    lines.push(`${it.cant} x ${it.desc || tipo} - ${money(it.cant*it.precio)}`);
+  });
+  lines.push('');
+  lines.push(`TOTAL: ${money(q.total)}`);
+  const opcionales = q.opcionales || [];
+  if(opcionales.length){
+    lines.push('');
+    lines.push('Opcional (a confirmar):');
+    opcionales.forEach(it=>{
+      const tipo = it.tipo==='mano_de_obra' ? 'Mano de obra' : 'Repuesto';
+      lines.push(`${it.cant} x ${it.desc || tipo} - ${money(it.cant*it.precio)}`);
+    });
+    const opcTotal = opcionales.reduce((s,r)=>s+(r.cant*r.precio),0);
+    lines.push(`Subtotal opcional: ${money(opcTotal)}`);
+  }
+  return lines.join('\n');
+}
+function exportQuotePDF(q){
+  if(typeof window.jspdf === 'undefined'){ alert('No se pudo cargar el generador de PDF. Revisá tu conexión a internet.'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  let y = 20;
+  doc.setFontSize(16); doc.text('BIKE MPV - Presupuesto', 14, y); y+=10;
+  doc.setFontSize(11);
+  if(q.cliente){ doc.text(`Cliente: ${q.cliente}`, 14, y); y+=7; }
+  if(q.bici){ doc.text(`Bici: ${q.bici}`, 14, y); y+=7; }
+  doc.text(`Fecha: ${q.fecha}`, 14, y); y+=10;
+  doc.setFontSize(10);
+  doc.text('Cant.', 14, y); doc.text('Descripción', 34, y); doc.text('Subtotal', 170, y); y+=4;
+  doc.line(14, y, 196, y); y+=6;
+  q.items.forEach(it=>{
+    const tipo = it.tipo==='mano_de_obra' ? 'Mano de obra' : 'Repuesto';
+    doc.text(String(it.cant), 14, y);
+    doc.text((it.desc || tipo).slice(0,60), 34, y);
+    doc.text(money(it.cant*it.precio), 170, y);
+    y+=7;
+    if(y>270){ doc.addPage(); y=20; }
+  });
+  y+=4; doc.line(14, y, 196, y); y+=10;
+  doc.setFontSize(13); doc.text(`Total: ${money(q.total)}`, 140, y); y+=10;
+
+  const opcionales = q.opcionales || [];
+  if(opcionales.length){
+    doc.setFontSize(12); doc.text('Opcional (a confirmar con el cliente):', 14, y); y+=8;
+    doc.setFontSize(10);
+    opcionales.forEach(it=>{
+      const tipo = it.tipo==='mano_de_obra' ? 'Mano de obra' : 'Repuesto';
+      doc.text(String(it.cant), 14, y);
+      doc.text((it.desc || tipo).slice(0,60), 34, y);
+      doc.text(money(it.cant*it.precio), 170, y);
+      y+=7;
+      if(y>270){ doc.addPage(); y=20; }
+    });
+    const opcTotal = opcionales.reduce((s,r)=>s+(r.cant*r.precio),0);
+    y+=3; doc.setFontSize(11); doc.text(`Subtotal opcional: ${money(opcTotal)}`, 140, y);
+  }
+  doc.save(`presupuesto_${(q.cliente||'cliente').replace(/\s+/g,'_')}.pdf`);
+}
+function shareQuoteWhatsApp(q){
+  const text = encodeURIComponent(quoteSummaryText(q));
+  const phone = (q.telefono||'').replace(/[^0-9]/g,'');
+  const url = phone ? `https://wa.me/${phone}?text=${text}` : `https://wa.me/?text=${text}`;
+  window.open(url, '_blank');
 }
 
 /* ---------------- ajustes ---------------- */
@@ -910,9 +1491,11 @@ document.getElementById('btn-change-pass').addEventListener('click', async ()=>{
 function renderAll(){
   renderCalendar();
   renderStock();
+  refreshPartsDatalist();
   quoteRows = [newQuoteRow()];
   renderQuoteRows();
   renderSavedQuotes();
+  updateListosBadge();
 }
 
 boot();
