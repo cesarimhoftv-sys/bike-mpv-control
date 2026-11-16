@@ -326,19 +326,98 @@ const Store = {
   }
 };
 
+function bk_toFirestoreValue(v){
+  if(v === null || v === undefined) return { nullValue: null };
+  if(typeof v === 'string') return { stringValue: v };
+  if(typeof v === 'boolean') return { booleanValue: v };
+  if(typeof v === 'number') return Number.isInteger(v) ? { integerValue: String(v) } : { doubleValue: v };
+  if(Array.isArray(v)) return { arrayValue: { values: v.map(bk_toFirestoreValue) } };
+  if(typeof v === 'object') return { mapValue: { fields: bk_toFirestoreFields(v) } };
+  return { stringValue: String(v) };
+}
+
+function bk_toFirestoreFields(obj){
+  const out = {};
+  for(const k in obj) out[k] = bk_toFirestoreValue(obj[k]);
+  return out;
+}
+
+function bk_fromFirestoreValue(v){
+  if(!v) return null;
+  if('stringValue' in v) return v.stringValue;
+  if('booleanValue' in v) return v.booleanValue;
+  if('integerValue' in v) return parseInt(v.integerValue, 10);
+  if('doubleValue' in v) return v.doubleValue;
+  if('nullValue' in v) return null;
+  if('arrayValue' in v) return (v.arrayValue.values || []).map(bk_fromFirestoreValue);
+  if('mapValue' in v) return bk_fromFirestoreFields(v.mapValue.fields || {});
+  return null;
+}
+
+function bk_fromFirestoreFields(fields){
+  const out = {};
+  for(const k in fields) out[k] = bk_fromFirestoreValue(fields[k]);
+  return out;
+}
+
+async function bk_fsGet(projectId, path){
+  const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/default/documents/${path}`;
+  const res = await fetch(url);
+  if(res.status === 404) return null;
+  if(!res.ok) throw new Error('No se pudo leer de Firestore (código ' + res.status + '). Revisá que el projectId sea correcto y que las reglas de Firestore permitan lectura.');
+  const data = await res.json();
+  return data.fields ? bk_fromFirestoreFields(data.fields) : {};
+}
+
+async function bk_fsSet(projectId, path, obj){
+  const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/default/documents/${path}`;
+  const res = await fetch(url, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fields: bk_toFirestoreFields(obj || {}) })
+  });
+  if(res.ok) return;
+  if(res.status === 404){
+    // El documento todavía no existe: lo creamos explícitamente con POST.
+    const parts = path.split('/');
+    const docId = parts.pop();
+    const collectionPath = parts.join('/');
+    const createUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/default/documents/${collectionPath}?documentId=${encodeURIComponent(docId)}`;
+    const createRes = await fetch(createUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fields: bk_toFirestoreFields(obj || {}) })
+    });
+    if(createRes.ok) return;
+    if(createRes.status === 409){
+      // Ya existe (se creó entre medio): reintentamos el PATCH una vez.
+      const retryRes = await fetch(url, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fields: bk_toFirestoreFields(obj || {}) })
+      });
+      if(retryRes.ok) return;
+      throw new Error('No se pudo escribir en Firestore (código ' + retryRes.status + ').');
+    }
+    throw new Error('No se pudo crear el documento en Firestore (código ' + createRes.status + ').');
+  }
+  throw new Error('No se pudo escribir en Firestore (código ' + res.status + ').');
+}
+
 /* ===== Puente con BIKE MPV: mismos datos (mismo sitio, misma memoria del navegador) ===== */
 window.BIKE_MODE = true;
 const BIKE_KEY = 'bikempv_state_v1';
 const BK = {
   ld() { const s = safeJSON(localStorage.getItem(BIKE_KEY), null) || {}; s.jobs = s.jobs || []; s.parts = s.parts || []; s.quotes = s.quotes || []; s.cancelados = s.cancelados || []; return s; },
-  sv(s) { try { localStorage.setItem(BIKE_KEY, JSON.stringify(s)); } catch (_) {} },
+  fbId() { try { const c = JSON.parse(localStorage.getItem('bikempv_firebase_config_v1') || 'null'); return c && c.projectId; } catch (_) { return null; } },
+  sv(s) { try { localStorage.setItem(BIKE_KEY, JSON.stringify(s)); } catch (_) {} const id = BK.fbId(); if (id) { clearTimeout(BK._t); BK._t = setTimeout(() => { bk_fsSet(id, 'bikempv/state', s).catch(() => {}); }, 400); } },
   pid: n => 'c_' + norm(n).replace(/\s+/g, '_'),
   est: { pendiente: 'pendiente', confirmado: 'pendiente', 'en curso': 'progreso', listo: 'listo', entregado: 'entregado', realizado: 'entregado' },
   estInv: { pendiente: 'pendiente', progreso: 'en curso', listo: 'listo', entregado: 'entregado' },
   ag(j, canc) { return { id: j.id, fecha: j.fechaEntrega || j.fechaIngreso || '', hora: j.hora || '', personaId: BK.pid(j.cliente), personaNombre: j.cliente || '', titulo: j.descripcion || j.bici || '', objeto: j.bici || '', estado: canc ? 'cancelado' : (BK.estInv[j.estado] || 'pendiente') }; },
   part(p) { return { id: p.id, nombre: p.nombre, categoria: p.categoria || '', cantidad: p.cantidad, precio: p.precioFinal || 0, minimo: p.minimo }; }
 };
-if (BK.ld() && localStorage.getItem('bikempv_firebase_config_v1') && !sessionStorage.getItem('bk_fb_aviso')) { sessionStorage.setItem('bk_fb_aviso', '1'); setTimeout(() => alert('Aviso: BIKE MPV tiene Firebase conectado. Los cambios hechos desde el asistente quedan en este celular y podrían no subirse a la nube.'), 800); }
+(async () => { const id = BK.fbId(); if (!id) return; try { const r = await bk_fsGet(id, 'bikempv/state'); if (r && r.jobs) localStorage.setItem(BIKE_KEY, JSON.stringify(r)); } catch (_) {} })();
 (function () {
   const BR = new Set(['stock', 'agenda', 'servicios', 'personas']);
   const raw = c => Store.cache[c] || (Store.cache[c] = []);
